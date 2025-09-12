@@ -6,6 +6,7 @@ import {
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 import { useNavigation, useRoute } from '@react-navigation/native';
+import { API_BASE_URL } from '../api/AxiosApi';
 
 const BoardDetailScreen = () => {
   const [post, setPost] = useState(null);
@@ -29,7 +30,7 @@ const BoardDetailScreen = () => {
   const fetchPost = async () => {
     try {
       const token = await AsyncStorage.getItem('token');
-      const res = await axios.get(`http://springboot-developer-single.eba-49z7darg.ap-northeast-2.elasticbeanstalk.com/api/board/${id}`, {
+      const res = await axios.get(`${API_BASE_URL}/api/board/${id}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       const data = res.data;
@@ -46,7 +47,7 @@ const BoardDetailScreen = () => {
   const fetchComments = async () => {
     try {
       const token = await AsyncStorage.getItem('token');
-      const res = await axios.get(`http://springboot-developer-single.eba-49z7darg.ap-northeast-2.elasticbeanstalk.com/api/comments/${id}`, {
+      const res = await axios.get(`${API_BASE_URL}/api/comments/${id}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
 
@@ -73,7 +74,7 @@ const BoardDetailScreen = () => {
     if (!token) return Alert.alert("로그인 필요!", '로그인이 필요합니다.');
     try {
       const res = await axios.post(
-        `http://springboot-developer-single.eba-49z7darg.ap-northeast-2.elasticbeanstalk.com/api/board/${post.id}/like`,
+        `${API_BASE_URL}/api/board/${post.id}/like`,
         {},
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -92,7 +93,7 @@ const BoardDetailScreen = () => {
     if (!token) return Alert.alert("로그인 필요!", '로그인이 필요합니다.');
     try {
       const res = await axios.post(
-        `http://springboot-developer-single.eba-49z7darg.ap-northeast-2.elasticbeanstalk.com/api/board/${post.id}/save`,
+        `${API_BASE_URL}/api/board/${post.id}/save`,
         {},
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -109,7 +110,7 @@ const BoardDetailScreen = () => {
         text: '삭제',
         onPress: async () => {
           const token = await AsyncStorage.getItem('token');
-          await axios.delete(`http://springboot-developer-single.eba-49z7darg.ap-northeast-2.elasticbeanstalk.com/api/board/${id}`, {
+          await axios.delete(`${API_BASE_URL}/api/board/${id}`, {
             headers: { Authorization: `Bearer ${token}` },
           });
           navigation.goBack();
@@ -132,13 +133,13 @@ const BoardDetailScreen = () => {
     try {
       if (editingCommentId) {
         await axios.put(
-          `http://springboot-developer-single.eba-49z7darg.ap-northeast-2.elasticbeanstalk.com/api/comments/${editingCommentId}`,
+          `${API_BASE_URL}/api/comments/${editingCommentId}`,
           { content: newComment },
           { headers: { Authorization: `Bearer ${token}` } }
         );
       } else {
         await axios.post(
-          'http://springboot-developer-single.eba-49z7darg.ap-northeast-2.elasticbeanstalk.com/api/comments',
+          '${API_BASE_URL}/api/comments',
           {
             boardId: id,
             email,
@@ -161,7 +162,7 @@ const BoardDetailScreen = () => {
     const token = await AsyncStorage.getItem('token');
     if (!token) return Alert.alert("로그인 필요!", '로그인이 필요합니다.');
     try {
-      await axios.delete(`http://springboot-developer-single.eba-49z7darg.ap-northeast-2.elasticbeanstalk.com/api/comments/${commentId}`, {
+      await axios.delete(`${API_BASE_URL}/api/comments/${commentId}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       fetchComments();
