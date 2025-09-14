@@ -7,6 +7,8 @@ import {
   StyleSheet,
   Alert,
   ScrollView,
+  KeyboardAvoidingView,
+  Platform,
 } from "react-native";
 import axios from "axios";
 import { useNavigation } from "@react-navigation/native";
@@ -42,38 +44,46 @@ const Signup = () => {
     let newErrors = {};
     let newSuccess = {};
 
-    // 이름
     if (name === "name") {
       if (!nameRegex.test(value)) newErrors.name = "이름은 한글 또는 영문만 입력 가능합니다.";
       else newSuccess.name = "✅ 올바른 이름 형식입니다.";
     }
 
-    // 아이디
     if (name === "userId") {
       if (!idRegex.test(value)) newErrors.userId = "아이디는 영문자와 숫자 4~20자여야 합니다.";
       else newSuccess.userId = "✅ 형식이 올바른 아이디입니다.";
     }
 
-    // 비밀번호
     if (name === "password") {
       if (!pwRegex.test(value)) newErrors.password = "비밀번호는 조건을 만족해야 합니다.";
       else newSuccess.password = "✅ 안전한 비밀번호입니다.";
+
+      if (form.confirmPassword) {
+        if (value !== form.confirmPassword) {
+          newErrors.confirmPassword = "비밀번호가 일치하지 않습니다.";
+          newSuccess.confirmPassword = "";
+        } else {
+          newErrors.confirmPassword = "";
+          newSuccess.confirmPassword = "✅ 비밀번호가 일치합니다.";
+        }
+      }
     }
 
-    // 비밀번호 확인
-    if (name === "confirmPassword" || name === "password") {
-      if (form.confirmPassword && value !== form.confirmPassword)
+    if (name === "confirmPassword") {
+      if (value !== form.password) {
         newErrors.confirmPassword = "비밀번호가 일치하지 않습니다.";
-      else if (form.confirmPassword) newSuccess.confirmPassword = "✅ 비밀번호가 일치합니다.";
+        newSuccess.confirmPassword = "";
+      } else {
+        newErrors.confirmPassword = "";
+        newSuccess.confirmPassword = "✅ 비밀번호가 일치합니다.";
+      }
     }
 
-    // 닉네임
     if (name === "nickName") {
       if (value.length < 2) newErrors.nickName = "닉네임은 2자 이상이어야 합니다.";
       else newSuccess.nickName = "✅ 형식이 올바른 닉네임입니다.";
     }
 
-    // 이메일
     if (name === "email") {
       if (!emailRegex.test(value)) newErrors.email = "유효한 이메일 형식이 아닙니다.";
       else newSuccess.email = "✅ 이메일 형식이 올바릅니다.";
@@ -88,7 +98,6 @@ const Signup = () => {
       setErrors(prev => ({ ...prev, userId: "아이디는 영문자와 숫자 4~20자여야 합니다." }));
       return;
     }
-
     try {
       const res = await axios.get(`${API_BASE_URL}/api/users/check-userId`, {
         params: { userId: form.userId },
@@ -110,7 +119,6 @@ const Signup = () => {
       setErrors(prev => ({ ...prev, nickName: "닉네임은 2자 이상이어야 합니다." }));
       return;
     }
-
     try {
       const res = await axios.get(`${API_BASE_URL}/api/users/check-nickname`, {
         params: { nickName: form.nickName },
@@ -132,7 +140,6 @@ const Signup = () => {
       setErrors(prev => ({ ...prev, email: "올바른 이메일을 입력해주세요." }));
       return;
     }
-
     try {
       const res = await axios.post(`${API_BASE_URL}/api/users/send-verification-code`, null, {
         params: { email: form.email },
@@ -179,104 +186,109 @@ const Signup = () => {
   };
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
+    <KeyboardAvoidingView
+      style={{ flex: 1 }}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+    >
+      <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
 
-      <TextInput
-        style={styles.input}
-        placeholder="이름"
-        value={form.name}
-        onChangeText={text => handleChange("name", text)}
-      />
-      {errors.name && <Text style={styles.error}>{errors.name}</Text>}
-      {success.name && <Text style={styles.success}>{success.name}</Text>}
-
-      <View style={styles.row}>
         <TextInput
-          style={[styles.input, { flex: 1 }]}
-          placeholder="아이디"
-          value={form.userId}
-          onChangeText={text => handleChange("userId", text)}
+          style={styles.input}
+          placeholder="이름"
+          value={form.name}
+          onChangeText={text => handleChange("name", text)}
         />
-        <TouchableOpacity style={styles.checkButton} onPress={checkUserIdDuplicate}>
-          <Text style={styles.checkButtonText}>중복</Text>
-        </TouchableOpacity>
-      </View>
-      {errors.userId && <Text style={styles.error}>{errors.userId}</Text>}
-      {success.userId && <Text style={styles.success}>{success.userId}</Text>}
+        {errors.name && <Text style={styles.error}>{errors.name}</Text>}
+        {success.name && <Text style={styles.success}>{success.name}</Text>}
 
-      <TextInput
-        style={styles.input}
-        placeholder="비밀번호"
-        secureTextEntry
-        value={form.password}
-        onChangeText={text => handleChange("password", text)}
-      />
-      {errors.password && <Text style={styles.error}>{errors.password}</Text>}
-      {success.password && <Text style={styles.success}>{success.password}</Text>}
-
-      <TextInput
-        style={styles.input}
-        placeholder="비밀번호 확인"
-        secureTextEntry
-        value={form.confirmPassword}
-        onChangeText={text => handleChange("confirmPassword", text)}
-      />
-      {errors.confirmPassword && <Text style={styles.error}>{errors.confirmPassword}</Text>}
-      {success.confirmPassword && <Text style={styles.success}>{success.confirmPassword}</Text>}
-
-      <View style={styles.row}>
-        <TextInput
-          style={[styles.input, { flex: 1 }]}
-          placeholder="닉네임"
-          value={form.nickName}
-          onChangeText={text => handleChange("nickName", text)}
-        />
-        <TouchableOpacity style={styles.checkButton} onPress={checkNicknameDuplicate}>
-          <Text style={styles.checkButtonText}>중복</Text>
-        </TouchableOpacity>
-      </View>
-      {errors.nickName && <Text style={styles.error}>{errors.nickName}</Text>}
-      {success.nickName && <Text style={styles.success}>{success.nickName}</Text>}
-
-      <View style={styles.row}>
-        <TextInput
-          style={[styles.input, { flex: 1 }]}
-          placeholder="이메일"
-          keyboardType="email-address"
-          value={form.email}
-          onChangeText={text => handleChange("email", text)}
-        />
-        <TouchableOpacity style={styles.checkButton} onPress={handleSendEmailCode}>
-          <Text style={styles.checkButtonText}>인증번호 요청</Text>
-        </TouchableOpacity>
-      </View>
-      {errors.email && <Text style={styles.error}>{errors.email}</Text>}
-      {success.email && <Text style={styles.success}>{success.email}</Text>}
-
-      {emailSent && (
         <View style={styles.row}>
           <TextInput
             style={[styles.input, { flex: 1 }]}
-            placeholder="인증번호 입력"
-            value={form.emailCode}
-            onChangeText={text => handleChange("emailCode", text)}
+            placeholder="아이디"
+            value={form.userId}
+            onChangeText={text => handleChange("userId", text)}
           />
-          <TouchableOpacity style={styles.checkButton} onPress={handleVerifyEmailCode}>
-            <Text style={styles.checkButtonText}>인증 확인</Text>
+          <TouchableOpacity style={styles.checkButton} onPress={checkUserIdDuplicate}>
+            <Text style={styles.checkButtonText}>중복</Text>
           </TouchableOpacity>
         </View>
-      )}
-      {errors.emailCode && <Text style={styles.error}>{errors.emailCode}</Text>}
-      {emailVerified && <Text style={styles.success}>✅ 이메일 인증 완료</Text>}
+        {errors.userId && <Text style={styles.error}>{errors.userId}</Text>}
+        {success.userId && <Text style={styles.success}>{success.userId}</Text>}
 
-      <TouchableOpacity style={styles.signupButton} onPress={handleSignup}>
-        <Text style={styles.signupButtonText}>회원가입</Text>
-      </TouchableOpacity>
+        <TextInput
+          style={styles.input}
+          placeholder="비밀번호"
+          secureTextEntry
+          value={form.password}
+          onChangeText={text => handleChange("password", text)}
+        />
+        {errors.password && <Text style={styles.error}>{errors.password}</Text>}
+        {success.password && <Text style={styles.success}>{success.password}</Text>}
 
-      <TouchableOpacity style={styles.backButton} onPress={() => navigation.navigate("로그인")}>
-        <Text style={styles.backButtonText}>로그인 페이지로 이동</Text>
-      </TouchableOpacity>
-    </ScrollView>
+        <TextInput
+          style={styles.input}
+          placeholder="비밀번호 확인"
+          secureTextEntry
+          value={form.confirmPassword}
+          onChangeText={text => handleChange("confirmPassword", text)}
+        />
+        {errors.confirmPassword && <Text style={styles.error}>{errors.confirmPassword}</Text>}
+        {success.confirmPassword && <Text style={styles.success}>{success.confirmPassword}</Text>}
+
+        <View style={styles.row}>
+          <TextInput
+            style={[styles.input, { flex: 1 }]}
+            placeholder="닉네임"
+            value={form.nickName}
+            onChangeText={text => handleChange("nickName", text)}
+          />
+          <TouchableOpacity style={styles.checkButton} onPress={checkNicknameDuplicate}>
+            <Text style={styles.checkButtonText}>중복</Text>
+          </TouchableOpacity>
+        </View>
+        {errors.nickName && <Text style={styles.error}>{errors.nickName}</Text>}
+        {success.nickName && <Text style={styles.success}>{success.nickName}</Text>}
+
+        <View style={styles.row}>
+          <TextInput
+            style={[styles.input, { flex: 1 }]}
+            placeholder="이메일"
+            keyboardType="email-address"
+            value={form.email}
+            onChangeText={text => handleChange("email", text)}
+          />
+          <TouchableOpacity style={styles.checkButton} onPress={handleSendEmailCode}>
+            <Text style={styles.checkButtonText}>인증번호 요청</Text>
+          </TouchableOpacity>
+        </View>
+        {errors.email && <Text style={styles.error}>{errors.email}</Text>}
+        {success.email && <Text style={styles.success}>{success.email}</Text>}
+
+        {emailSent && (
+          <View style={styles.row}>
+            <TextInput
+              style={[styles.input, { flex: 1 }]}
+              placeholder="인증번호 입력"
+              value={form.emailCode}
+              onChangeText={text => handleChange("emailCode", text)}
+            />
+            <TouchableOpacity style={styles.checkButton} onPress={handleVerifyEmailCode}>
+              <Text style={styles.checkButtonText}>인증 확인</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+        {errors.emailCode && <Text style={styles.error}>{errors.emailCode}</Text>}
+        {emailVerified && <Text style={styles.success}>✅ 이메일 인증 완료</Text>}
+
+        <TouchableOpacity style={styles.signupButton} onPress={handleSignup}>
+          <Text style={styles.signupButtonText}>회원가입</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity style={styles.backButton} onPress={() => navigation.navigate("로그인")}>
+          <Text style={styles.backButtonText}>로그인 페이지로 이동</Text>
+        </TouchableOpacity>
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 };
 
@@ -284,14 +296,13 @@ export default Signup;
 
 const styles = StyleSheet.create({
   container: { padding: 20 },
-  title: { fontSize: 24, fontWeight: "bold", marginBottom: 20 },
   input: { 
     flex: 1,
     borderWidth: 1,
     borderColor: "#ccc",
     borderRadius: 6,
     paddingHorizontal: 10,
-    height: 45, // 높이를 고정
+    height: 45,
     marginBottom: 10,
   },
   row: { 
@@ -301,7 +312,7 @@ const styles = StyleSheet.create({
   },
   checkButton: { 
     backgroundColor: "#1F3F9D",
-    height: 45, // 입력창과 동일
+    height: 45,
     justifyContent: "center",
     alignItems: "center",
     paddingHorizontal: 15,
@@ -312,7 +323,7 @@ const styles = StyleSheet.create({
   checkButtonText: { 
     color: "white",
     fontWeight: "bold",
-    fontSize: 14, // 텍스트 크기 조정
+    fontSize: 14,
   },
   error: { color: "red", marginBottom: 5 },
   success: { color: "green", marginBottom: 5 },
@@ -327,4 +338,3 @@ const styles = StyleSheet.create({
   backButton: { marginTop: 10, alignItems: "center" },
   backButtonText: { color: "#1F3F9D" },
 });
-

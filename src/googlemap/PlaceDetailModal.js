@@ -183,7 +183,7 @@ const styles = StyleSheet.create({
   subtitle: { fontSize: 16, fontWeight: "bold", marginBottom: 5 },
   myReview: { backgroundColor: "#f7f7f7", padding: 10, borderRadius: 6, marginBottom: 10, flexDirection: "row", justifyContent: "space-between" },
   input: { flex: 1, borderWidth: 1, borderColor: "#ccc", borderRadius: 6, paddingHorizontal: 8, marginRight: 5 },
-  button: { backgroundColor: "#007bff", borderRadius: 6, paddingVertical: 8, paddingHorizontal: 12 },
+  button: { backgroundColor: "#1F3F9D", borderRadius: 6, paddingVertical: 8, paddingHorizontal: 12 },
   buttonText: { color: "white" },
   reviewItem: { flexDirection: "row", justifyContent: "space-between", marginBottom: 5 },
   delete: { color: "red", marginLeft: 10 },

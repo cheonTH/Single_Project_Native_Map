@@ -128,7 +128,7 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   button: {
-    backgroundColor: '#007bff',
+    backgroundColor: '#1F3F9D',
     paddingVertical: 12,
     borderRadius: 5,
     alignItems: 'center',
@@ -159,7 +159,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   pwButton: {
-    backgroundColor: '#28a745',
+    backgroundColor: '#1F3F9D',
     paddingHorizontal: 10,
     paddingVertical: 5,
     borderRadius: 5,
@@ -173,7 +173,7 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   loginButton: {
-    backgroundColor: '#f08c00',
+    backgroundColor: '#333',
     paddingVertical: 12,
     borderRadius: 5,
     alignItems: 'center',

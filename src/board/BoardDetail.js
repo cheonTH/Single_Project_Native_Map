@@ -43,23 +43,23 @@ const BoardDetailScreen = () => {
   console.log(userId)
 
 
-  useLayoutEffect(() => {
-    const parent = navigation.getParent(); // Tab.Navigator
-    parent?.setOptions({ tabBarStyle: { display: "none" } });
+  // useLayoutEffect(() => {
+  //   const parent = navigation.getParent(); // Tab.Navigator
+  //   parent?.setOptions({ tabBarStyle: { display: "none" } });
 
-    // 뒤로 가면 다시 보이게 복원
-    return () =>
-      parent?.setOptions({
-        tabBarStyle: {
-          height: 70,
-          paddingBottom: 12,
-          paddingTop: 5,
-          borderTopWidth: 1,
-          borderTopColor: "#ddd",
-          backgroundColor: "#1F3F9D",
-        },
-      });
-  }, [navigation]);
+  //   // 뒤로 가면 다시 보이게 복원
+  //   return () =>
+  //     parent?.setOptions({
+  //       tabBarStyle: {
+  //         height: 70,
+  //         paddingBottom: 12,
+  //         paddingTop: 5,
+  //         borderTopWidth: 1,
+  //         borderTopColor: "#ddd",
+  //         backgroundColor: "#1F3F9D",
+  //       },
+  //     });
+  // }, [navigation]);
 
 
   const fetchPost = async () => {

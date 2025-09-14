@@ -82,7 +82,7 @@ export default function HomeScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, marginTop: 30 },
+  container: { flex: 1, marginTop: 40 },
   buttonContainer: { flexDirection: "row", justifyContent: "space-around", marginVertical: 10 },
   roundButton: {
     backgroundColor: "#1F3F9D",

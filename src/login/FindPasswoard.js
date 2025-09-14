@@ -142,7 +142,7 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   button: {
-    backgroundColor: '#007bff',
+    backgroundColor: '#1F3F9D',
     paddingVertical: 12,
     borderRadius: 5,
     alignItems: 'center',
@@ -169,7 +169,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   loginButton: {
-    backgroundColor: '#f08c00',
+    backgroundColor: '#333',
     paddingVertical: 12,
     borderRadius: 5,
     alignItems: 'center',
