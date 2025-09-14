@@ -1,15 +1,8 @@
-// components/BoardList.js
-import React, { useContext, useEffect, useState } from "react";
-import {
-  View,
-  Text,
-  FlatList,
-  TextInput,
-  TouchableOpacity,
-  StyleSheet,
-  ActivityIndicator,
-} from "react-native";
-import { useNavigation } from "@react-navigation/native";
+import React, { useContext, useMemo, useState, useEffect } from "react";
+import { View, Text, FlatList, TouchableOpacity, StyleSheet } from "react-native";
+import { useNavigation, useFocusEffect } from "@react-navigation/native";
+import { Ionicons } from "@expo/vector-icons";
+import { Picker } from "@react-native-picker/picker";
 import BoardContext from "./BoardContext";
 import BoardItem from "./BoardItem";
 
@@ -17,53 +10,62 @@ const BoardList = () => {
   const { boardList, loading, fetchBoards } = useContext(BoardContext);
   const navigation = useNavigation();
 
-  const [title, setTitle] = useState("");
-  const [searchQuery, setSearchQuery] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
-  const [filteredBoards, setFilteredBoards] = useState([]);
-  const [isSearching, setIsSearching] = useState(false);
-  const [selectedCategory, setSelectedCategory] = useState('all');
+  const [selectedCategory, setSelectedCategory] = useState("all");
 
-  useEffect(() => {
-    fetchBoards();
-  }, []);
+  // 화면 들어올 때마다 새로 불러오기
+  useFocusEffect(
+    React.useCallback(() => {
+      fetchBoards();
+    }, [])
+  );
 
-  useEffect(() => {
-    if (selectedCategory === "all") setTitle("전체");
-    else if (selectedCategory === "tip") setTitle("자취 팁");
-    else if (selectedCategory === "자유") setTitle("자유");
-    else if (selectedCategory === "질문") setTitle("자취 질문");
-  }, [selectedCategory]);
+  // 필터링
+  const filteredBoards = useMemo(() => {
+    if (!boardList) return [];
 
-  useEffect(() => {
-    if (!boardList) return;
-
+    // 카테고리 필터링
     const baseFiltered =
       selectedCategory === "all"
         ? [...boardList]
         : boardList.filter((item) => item.category === selectedCategory);
 
+    // 검색어 필터링
     let finalFiltered = baseFiltered;
-
     if (searchTerm.trim() !== "") {
       finalFiltered = baseFiltered.filter(
         (item) =>
           item.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
           item.content.toLowerCase().includes(searchTerm.toLowerCase())
       );
-      setIsSearching(true);
-    } else {
-      setIsSearching(false);
     }
 
+    // 최신순 정렬
     finalFiltered.sort(
       (a, b) => new Date(b.writingTime) - new Date(a.writingTime)
     );
 
-    setFilteredBoards(finalFiltered);
+    return finalFiltered;
   }, [boardList, selectedCategory, searchTerm]);
 
-  if (loading) return <ActivityIndicator size="large" color="#1F3F9D" />;
+  // 헤더 버튼
+  useEffect(() => {
+    navigation.setOptions({
+      headerRight: () => (
+        <View style={{ flexDirection: "row", gap: 20, marginRight: 15 }}>
+          <TouchableOpacity onPress={() => navigation.navigate("검색")}>
+            <Ionicons name="search" size={24} color="#1F3F9D" />
+          </TouchableOpacity>
+          <TouchableOpacity onPress={() => navigation.navigate("글쓰기")}>
+            <Ionicons name="create-outline" size={24} color="#1F3F9D" />
+          </TouchableOpacity>
+        </View>
+      ),
+    });
+  }, [navigation]);
+
+  if (loading) return <Text>로딩 중...</Text>;
+
   if (!boardList || boardList.length === 0) {
     return (
       <View style={styles.container}>
@@ -72,27 +74,10 @@ const BoardList = () => {
     );
   }
 
-  if (filteredBoards.length === 0) {
-    return (
-      <View style={styles.container}>
-        <Text style={styles.title}>
-          {isSearching ? `"${searchTerm}" 검색 결과` : `${title} 게시판`}
-        </Text>
-        <Text>해당 카테고리에 게시글이 없습니다.</Text>
-      </View>
-    );
-  }
-
-  const handleSearch = () => {
-    setSearchTerm(searchQuery.trim());
-  };
-
   const renderItem = ({ item }) => (
     <TouchableOpacity
       style={styles.linkItem}
-      onPress={() => {
-        navigation.navigate("게시글 상세", { id: item.id });
-      }}
+      onPress={() => navigation.navigate("게시글 상세", { id: item.id })}
     >
       <BoardItem
         category={item.category}
@@ -107,29 +92,23 @@ const BoardList = () => {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>
-        {isSearching ? `"${searchTerm}" 검색 결과` : `${title} 게시판`}
-      </Text>
+      {/* 카테고리 선택 */}
+      <Picker
+        selectedValue={selectedCategory}
+        style={styles.picker}
+        onValueChange={(value) => setSelectedCategory(value)}
+      >
+        <Picker.Item label="전체" value="all" />
+        <Picker.Item label="자취 팁" value="tip" />
+        <Picker.Item label="자유" value="자유" />
+        <Picker.Item label="자취 질문" value="질문" />
+      </Picker>
 
       <FlatList
         data={filteredBoards}
         renderItem={renderItem}
         keyExtractor={(item) => item.id.toString()}
       />
-
-      {/* 검색창 */}
-      <View style={styles.searchBar}>
-        <TextInput
-          style={styles.input}
-          placeholder="제목 또는 내용을 검색하세요"
-          value={searchQuery}
-          onChangeText={setSearchQuery}
-          onSubmitEditing={handleSearch}
-        />
-        <TouchableOpacity style={styles.searchBtn} onPress={handleSearch}>
-          <Text style={{ color: "white", fontSize: 16 }}>검색</Text>
-        </TouchableOpacity>
-      </View>
     </View>
   );
 };
@@ -138,44 +117,22 @@ export default BoardList;
 
 const styles = StyleSheet.create({
   container: {
-    // borderWidth: 1,
-    // borderColor: "#ddd",
+    borderWidth: 1,
+    borderColor: "#ddd",
     borderRadius: 8,
     backgroundColor: "#fefefe",
-    // padding: 20,
-    // margin: 20,
-    // elevation: 3,
+    padding: 20,
+    margin: 20,
+    elevation: 3,
     flex: 1,
-  },
-  title: {
-    fontSize: 20,
-    fontWeight: "bold",
-    textAlign: "center",
-    marginBottom: 20,
-    color: "#1F3F9D",
   },
   linkItem: {
     marginBottom: 10,
   },
-  searchBar: {
-    flexDirection: "row",
-    justifyContent: "center",
-    marginVertical: 20,
-    gap: 10,
-  },
-  input: {
-    flex: 1,
-    height: 44,
-    borderWidth: 1,
-    borderColor: "#ccc",
-    borderRadius: 6,
-    paddingHorizontal: 14,
-    fontSize: 16,
-  },
-  searchBtn: {
-    backgroundColor: "#1F3F9D",
-    paddingHorizontal: 20,
-    justifyContent: "center",
+  picker: {
+    marginBottom: 15,
+    backgroundColor: "#f5f5f5",
     borderRadius: 6,
   },
 });
+ 

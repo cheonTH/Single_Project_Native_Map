@@ -1,73 +1,114 @@
 import React, { useState, useRef } from "react";
-import { View, Text, StyleSheet, Dimensions, Button, FlatList } from "react-native";
-import CurrentLocationMap from "../kakaomap/CurrentLocationMap";
-
-const { height: SCREEN_HEIGHT } = Dimensions.get("window");
+import { View, Text, StyleSheet, FlatList, TouchableOpacity } from "react-native";
+import CurrentLocationMap from "../googlemap/CurrentLocationMap";
+import PlaceDetailModal from "../googlemap/PlaceDetailModal";
 
 export default function HomeScreen() {
-  const mapRef = useRef(null); // CurrentLocationMap 참조
-  const [places, setPlaces] = useState([]); // 검색 결과 저장
+  const mapRef = useRef(null);
+  const [places, setPlaces] = useState([]);
+  const [selectedPlace, setSelectedPlace] = useState(null);
+  const [isModalVisible, setIsModalVisible] = useState(false);
 
   const handleSearch = (keyword) => {
-    if (mapRef.current) {
-      mapRef.current.searchPlaces(keyword, (results) => {
-        setPlaces(results);
-      });
-    }
+    mapRef.current?.searchPlaces(keyword);
+  };
+
+  const handleMoveToMarker = (location) => {
+    mapRef.current?.moveToMarker(location.lat, location.lng);
+  };
+
+  const openDetail = (place) => {
+    setSelectedPlace(place);
+    setIsModalVisible(true);
+  };
+
+  const closeDetail = () => {
+    setSelectedPlace(null);
+    setIsModalVisible(false);
   };
 
   return (
     <View style={styles.container}>
-      {/* 지도 */}
-      <View style={styles.mapContainer}>
-        <CurrentLocationMap ref={mapRef} />
-      </View>
+      <CurrentLocationMap
+        ref={mapRef}
+        onSearchResult={(results) => setPlaces(results)}
+      />
 
-      {/* 버튼 */}
       <View style={styles.buttonContainer}>
-        <Button title="🍚 혼밥" onPress={() => handleSearch("혼밥")} />
-        <Button title="🧺 코인세탁방" onPress={() => handleSearch("코인세탁방")} />
-        <Button title="☕ 카페" onPress={() => handleSearch("카페")} />
+        <TouchableOpacity style={styles.roundButton} onPress={() => handleSearch("혼밥")}>
+          <Text style={styles.buttonText}>🍚 혼밥</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.roundButton} onPress={() => handleSearch("코인세탁방")}>
+          <Text style={styles.buttonText}>🧺 코인세탁방</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.roundButton} onPress={() => handleSearch("카페")}>
+          <Text style={styles.buttonText}>☕ 카페</Text>
+        </TouchableOpacity>
       </View>
 
-      {/* 결과 리스트 */}
-      <View style={styles.content}>
-        <FlatList
-          data={places}
-          keyExtractor={(item, index) => index.toString()}
-          renderItem={({ item }) => (
-            <View style={styles.placeItem}>
+      <FlatList
+        style={styles.list}
+        data={places}
+        keyExtractor={(item) => item.id}
+        renderItem={({ item }) => (
+          <View style={styles.placeItem}>
+            <TouchableOpacity onPress={() => handleMoveToMarker(item.location)}>
               <Text style={styles.placeName}>{item.name}</Text>
               <Text style={styles.placeAddr}>{item.address}</Text>
-            </View>
-          )}
-          ListEmptyComponent={<Text>검색 결과가 없습니다.</Text>}
+              <Text style={{ color: "#555" }}>거리: {item.distance} km</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity style={styles.detailButton} onPress={() => openDetail(item)}>
+              <Text style={styles.detailButtonText}>상세보기</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+        ListEmptyComponent={
+          <Text style={{ textAlign: "center", marginTop: 20 }}>
+            검색 결과가 없습니다.
+          </Text>
+        }
+      />
+
+      {selectedPlace && (
+        <PlaceDetailModal
+          place={selectedPlace}
+          visible={isModalVisible}
+          onClose={closeDetail}
         />
-      </View>
+      )}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, marginTop: 25 },
-  mapContainer: { height: SCREEN_HEIGHT / 3 },
-  buttonContainer: {
-    flexDirection: "row",
-    justifyContent: "space-around",
-    marginVertical: 10,
+  container: { flex: 1, marginTop: 30 },
+  buttonContainer: { flexDirection: "row", justifyContent: "space-around", marginVertical: 10 },
+  roundButton: {
+    backgroundColor: "#1F3F9D",
+    paddingVertical: 10,
+    paddingHorizontal: 15,
+    borderRadius: 20, // 둥글게
+    alignItems: "center",
   },
-  content: {
-    flex: 1,
-    backgroundColor: "#f5f5f5",
-    padding: 10,
+  buttonText: {
+    color: "#fff",
+    fontWeight: "bold",
   },
-  placeItem: {
-    padding: 10,
-    backgroundColor: "white",
-    borderRadius: 8,
-    marginVertical: 5,
-    elevation: 2,
-  },
+  list: { flex: 1, paddingHorizontal: 10 },
+  placeItem: { padding: 10, backgroundColor: "white", borderRadius: 8, marginVertical: 5, elevation: 2 },
   placeName: { fontWeight: "bold", fontSize: 16 },
   placeAddr: { color: "#555", fontSize: 14 },
+  detailButton: {
+    marginTop: 5,
+    backgroundColor: "#1F3F9D",
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    borderRadius: 15,
+    alignSelf: "flex-start",
+  },
+  detailButtonText: {
+    color: "#fff",
+    fontWeight: "bold",
+  },
 });

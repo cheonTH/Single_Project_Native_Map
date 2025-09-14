@@ -3,10 +3,12 @@ import {
   View, Text, Image, ScrollView, StyleSheet, TouchableOpacity,
   Alert, TextInput, Modal, Pressable, KeyboardAvoidingView, Platform
 } from 'react-native';
+import { FontAwesome, MaterialCommunityIcons } from "@expo/vector-icons";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { API_BASE_URL } from '../api/AxiosApi';
+import { useAuth } from '../../auth/AuthContext';
 
 const BoardDetailScreen = () => {
   const [post, setPost] = useState(null);
@@ -22,10 +24,43 @@ const BoardDetailScreen = () => {
   const [isSaved, setIsSaved] = useState(false);
   const [commentModalVisible, setCommentModalVisible] = useState(false);
   const [actionSheetVisible, setActionSheetVisible] = useState(false);
+  const [userId, setUserId] = useState('')
  
   const navigation = useNavigation();
   const route = useRoute();
   const { id } = route.params;
+  const {isLoggedIn} = useAuth()
+
+  useEffect(() => {
+    const fetchUserId = async () => {
+      if (isLoggedIn) {
+        const storedUserId = await AsyncStorage.getItem("userId");
+        setUserId(storedUserId);
+      }
+    };
+    fetchUserId();
+  }, [isLoggedIn]);
+  console.log(userId)
+
+
+  useLayoutEffect(() => {
+    const parent = navigation.getParent(); // Tab.Navigator
+    parent?.setOptions({ tabBarStyle: { display: "none" } });
+
+    // 뒤로 가면 다시 보이게 복원
+    return () =>
+      parent?.setOptions({
+        tabBarStyle: {
+          height: 70,
+          paddingBottom: 12,
+          paddingTop: 5,
+          borderTopWidth: 1,
+          borderTopColor: "#ddd",
+          backgroundColor: "#1F3F9D",
+        },
+      });
+  }, [navigation]);
+
 
   const fetchPost = async () => {
     try {
@@ -76,7 +111,12 @@ const BoardDetailScreen = () => {
       const res = await axios.post(
         `${API_BASE_URL}/api/board/${post.id}/like`,
         {},
-        { headers: { Authorization: `Bearer ${token}` } }
+        { 
+          headers: { 
+            Authorization: `Bearer ${token}`,
+            userId: userId,
+          }, 
+        }
       );
       setPost(prev => ({
         ...prev,
@@ -113,6 +153,7 @@ const BoardDetailScreen = () => {
           await axios.delete(`${API_BASE_URL}/api/board/${id}`, {
             headers: { Authorization: `Bearer ${token}` },
           });
+          Alert.alert("삭제 완료", "게시글이 삭제되었습니다.");
           navigation.goBack();
         },
       },
@@ -127,36 +168,53 @@ const BoardDetailScreen = () => {
   const handleSubmitComment = async () => {
     const email = await AsyncStorage.getItem('email');
     const token = await AsyncStorage.getItem('token');
+    const userId = await AsyncStorage.getItem('userId');
+    const nickName = await AsyncStorage.getItem('nickname');
+
     if (!newComment.trim()) return;
     if (!token) return Alert.alert("로그인 필요!", '로그인이 필요합니다.');
 
     try {
       if (editingCommentId) {
-        await axios.put(
+        // 댓글 수정
+        const res = await axios.put(
           `${API_BASE_URL}/api/comments/${editingCommentId}`,
           { content: newComment },
           { headers: { Authorization: `Bearer ${token}` } }
         );
+        // 수정 후 comments 상태 갱신
+        setComments(prev =>
+          prev.map(c => (c.id === editingCommentId ? res.data : c))
+        );
       } else {
-        await axios.post(
-          '${API_BASE_URL}/api/comments',
+        // 새로운 댓글 작성
+        const res = await axios.post(
+          `${API_BASE_URL}/api/comments`,
           {
             boardId: id,
-            email,
             content: newComment,
+            email,
+            userId,
+            nickName,
             parentId: replyTo || null,
+            createdTime: new Date().toLocaleString('ko-KR'),
           },
           { headers: { Authorization: `Bearer ${token}` } }
         );
+        // 최신 댓글을 추가
+        setComments(prev => [res.data, ...prev]);
       }
+
+      // 입력창 리셋
       setNewComment('');
       setReplyTo(null);
       setEditingCommentId(null);
-      fetchComments();
+
     } catch (err) {
       console.error('댓글 등록 실패:', err);
     }
   };
+
 
   const handleDeleteComment = async (commentId) => {
     const token = await AsyncStorage.getItem('token');
@@ -194,29 +252,29 @@ const BoardDetailScreen = () => {
     fetchComments();
   }, []);
 
-  useLayoutEffect(() => {
-    if (post && myEmail) {
-      navigation.setOptions({
-        headerRight: () =>
-          post.email !== myEmail && (
-            <TouchableOpacity onPress={handleSave} style={{ marginRight: 16 }}>
-              <Text style={{ fontSize: 20 }}>{isSaved ? '⭐' : '☆'}</Text>
-            </TouchableOpacity>
-          ),
-      });
-    }
-  }, [navigation, isSaved, post, myEmail]);
+  // useLayoutEffect(() => {
+  //   if (post && myEmail) {
+  //     navigation.setOptions({
+  //       headerRight: () =>
+  //         post.email !== myEmail && (
+  //           <TouchableOpacity onPress={handleSave} style={{ marginRight: 16 }}>
+  //             <Text style={{ fontSize: 20 }}>{isSaved ? '⭐' : '☆'}</Text>
+  //           </TouchableOpacity>
+  //         ),
+  //     });
+  //   }
+  // }, [navigation, isSaved, post, myEmail]);
 
   return (
     <View style={{ flex: 1 }}>
       <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: 100 }}>
-        {mainImage && <Image source={{ uri: mainImage }} style={styles.mainImage} />}
         <Text style={styles.title}>{post?.title}</Text>
         <Text style={styles.meta}>작성자: {authorNickname}</Text>
         <Text style={styles.meta}>{post?.writingTime}</Text>
           <>
             <View style={styles.divider} />
             <Text style={styles.paragraph}>{post?.content}</Text>
+            {mainImage && <Image source={{ uri: mainImage }} style={styles.mainImage} />}
           </>
         
       </ScrollView>
@@ -227,12 +285,21 @@ const BoardDetailScreen = () => {
           <Text style={styles.bottomBtnText}>목록</Text>
         </TouchableOpacity>
         <TouchableOpacity onPress={toggleCommentModal} style={styles.bottomBtn}>
-          <Text style={styles.bottomBtnText}>💬 댓글({comments.length})</Text>
+          <Text style={styles.bottomBtnText}>
+            <MaterialCommunityIcons name="comment-outline" size={16} color="#666" />({comments.length})
+          </Text>
         </TouchableOpacity>
         <TouchableOpacity onPress={handleLike} style={styles.bottomBtn}>
-          <Text style={styles.bottomBtnText}>{post?.isLiked ? '💗' : '🤍'} {post?.likeCount}</Text>
+          <Text style={styles.bottomBtnText}>
+            <FontAwesome
+              name={post?.isLiked ? "heart" : "heart-o"}
+              size={16}
+              color="#1F3F9D"
+            />{" "}
+            {post?.likeCount}
+          </Text>
         </TouchableOpacity>
-        {post?.email === myEmail && (
+        {post?.userId === userId && (
           <TouchableOpacity onPress={() => setActionSheetVisible(true)} style={styles.bottomBtn}>
             <Text style={styles.bottomBtnText}>⋯</Text>
           </TouchableOpacity>

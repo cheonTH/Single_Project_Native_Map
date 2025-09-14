@@ -25,7 +25,7 @@ export const BoardProvider = ({ children }) => {
     }
   };
 
-  // ✅ 좋아요 수 및 상태 업데이트
+  // 좋아요 수 및 상태 업데이트
   const updateBoardLikeCount = (boardId, newLikeCount, liked) => {
     setBoardList((prev) =>
       prev.map((item) =>

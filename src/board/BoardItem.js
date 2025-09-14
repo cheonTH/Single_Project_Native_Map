@@ -23,7 +23,7 @@ const BoardItem = ({ category, title, author, createdDate, likeCount, commentCou
       {/* 좋아요 + 댓글 */}
       <View style={styles.bottomRow}>
         <View style={styles.iconRow}>
-          <FontAwesome name="thumbs-up" size={16} color="#1F3F9D" />
+          <FontAwesome name="heart" size={16} color="#1F3F9D" />
           <Text style={styles.count}>{likeCount}</Text>
         </View>
         <View style={styles.iconRow}>
